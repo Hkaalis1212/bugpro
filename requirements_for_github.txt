@@ -1,0 +1,2 @@
+# requirements_for_github.txt
+Placeholder content for requirements_for_github.txt
