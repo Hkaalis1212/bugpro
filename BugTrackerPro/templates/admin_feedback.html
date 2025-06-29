@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Feedback - Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .feedback-card {
+            border-left: 4px solid #007bff;
+            margin-bottom: 1rem;
+        }
+        .feedback-card.pain_point { border-left-color: #ffc107; }
+        .feedback-card.bug_report { border-left-color: #dc3545; }
+        .feedback-card.feature_request { border-left-color: #17a2b8; }
+        .feedback-card.general { border-left-color: #6c757d; }
+        
+        .priority-high { border-left-color: #dc3545 !important; }
+        .priority-critical { border-left-color: #6f42c1 !important; }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="fas fa-bug me-2"></i>Bug Reporter
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{{ url_for('admin_dashboard') }}">Dashboard</a>
+                <a class="nav-link active" href="{{ url_for('admin_feedback') }}">Feedback</a>
+                <a class="nav-link" href="{{ url_for('admin_subscribers') }}">Subscribers</a>
+                <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid py-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col">
+                <h2><i class="fas fa-comments me-2"></i>User Feedback</h2>
+                <p class="text-muted">Monitor and respond to user feedback and pain points</p>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="row mb-4">
+            <div class="col-md-2">
+                <div class="card bg-primary text-white">
+                    <div class="card-body text-center">
+                        <h5>{{ feedback_items.total }}</h5>
+                        <small>Total Feedback</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card bg-warning text-white">
+                    <div class="card-body text-center">
+                        <h5>{{ feedback_items.items | selectattr('feedback_type', 'equalto', 'pain_point') | list | length }}</h5>
+                        <small>Pain Points</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card bg-danger text-white">
+                    <div class="card-body text-center">
+                        <h5>{{ feedback_items.items | selectattr('feedback_type', 'equalto', 'bug_report') | list | length }}</h5>
+                        <small>Bug Reports</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card bg-info text-white">
+                    <div class="card-body text-center">
+                        <h5>{{ feedback_items.items | selectattr('feedback_type', 'equalto', 'feature_request') | list | length }}</h5>
+                        <small>Feature Requests</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card bg-success text-white">
+                    <div class="card-body text-center">
+                        <h5>{{ feedback_items.items | selectattr('status', 'equalto', 'resolved') | list | length }}</h5>
+                        <small>Resolved</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card bg-secondary text-white">
+                    <div class="card-body text-center">
+                        <h5>{{ feedback_items.items | selectattr('status', 'equalto', 'open') | list | length }}</h5>
+                        <small>Open Items</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <form method="GET" class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Status Filter</label>
+                        <select name="status" class="form-select" onchange="this.form.submit()">
+                            <option value="all" {{ 'selected' if status_filter == 'all' else '' }}>All Status</option>
+                            <option value="open" {{ 'selected' if status_filter == 'open' else '' }}>Open</option>
+                            <option value="in_progress" {{ 'selected' if status_filter == 'in_progress' else '' }}>In Progress</option>
+                            <option value="resolved" {{ 'selected' if status_filter == 'resolved' else '' }}>Resolved</option>
+                            <option value="closed" {{ 'selected' if status_filter == 'closed' else '' }}>Closed</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Type Filter</label>
+                        <select name="type" class="form-select" onchange="this.form.submit()">
+                            <option value="all" {{ 'selected' if type_filter == 'all' else '' }}>All Types</option>
+                            <option value="pain_point" {{ 'selected' if type_filter == 'pain_point' else '' }}>Pain Points</option>
+                            <option value="feature_request" {{ 'selected' if type_filter == 'feature_request' else '' }}>Feature Requests</option>
+                            <option value="bug_report" {{ 'selected' if type_filter == 'bug_report' else '' }}>Bug Reports</option>
+                            <option value="general" {{ 'selected' if type_filter == 'general' else '' }}>General</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="button" class="btn btn-outline-secondary" onclick="window.location.href='{{ url_for('admin_feedback') }}'">
+                            <i class="fas fa-times me-2"></i>Clear Filters
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Feedback Items -->
+        {% if feedback_items.items %}
+            {% for feedback in feedback_items.items %}
+                <div class="card feedback-card {{ feedback.feedback_type }} {{ 'priority-' + feedback.priority if feedback.priority in ['high', 'critical'] else '' }}">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-0">{{ feedback.subject }}</h6>
+                            <small class="text-muted">
+                                <i class="fas fa-user me-1"></i>{{ feedback.name or 'Anonymous' }} 
+                                ({{ feedback.email }})
+                                <i class="fas fa-clock ms-3 me-1"></i>{{ feedback.submitted_at.strftime('%Y-%m-%d %H:%M') if feedback.submitted_at else 'N/A' }}
+                            </small>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <span class="badge bg-{{ 'warning' if feedback.feedback_type == 'pain_point' else 'danger' if feedback.feedback_type == 'bug_report' else 'info' if feedback.feedback_type == 'feature_request' else 'secondary' }}">
+                                {{ feedback.feedback_type.replace('_', ' ').title() }}
+                            </span>
+                            <span class="badge bg-{{ 'danger' if feedback.priority == 'critical' else 'warning' if feedback.priority == 'high' else 'info' if feedback.priority == 'medium' else 'secondary' }}">
+                                {{ feedback.priority.title() }}
+                            </span>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                    Status: {{ feedback.status.replace('_', ' ').title() }}
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#" onclick="updateStatus({{ feedback.id }}, 'open')">Open</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="updateStatus({{ feedback.id }}, 'in_progress')">In Progress</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="updateStatus({{ feedback.id }}, 'resolved')">Resolved</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="updateStatus({{ feedback.id }}, 'closed')">Closed</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-0">{{ feedback.message }}</p>
+                        <div class="mt-3">
+                            <button class="btn btn-outline-primary btn-sm" onclick="replyToFeedback('{{ feedback.email }}', '{{ feedback.subject }}')">
+                                <i class="fas fa-reply me-1"></i>Reply
+                            </button>
+                            <button class="btn btn-outline-info btn-sm" onclick="viewFeedbackDetails({{ feedback.id }})">
+                                <i class="fas fa-eye me-1"></i>Details
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+
+            <!-- Pagination -->
+            {% if feedback_items.pages > 1 %}
+                <nav>
+                    <ul class="pagination justify-content-center">
+                        {% if feedback_items.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('admin_feedback', page=feedback_items.prev_num, status=status_filter, type=type_filter) }}">Previous</a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for page_num in feedback_items.iter_pages() %}
+                            {% if page_num %}
+                                {% if page_num != feedback_items.page %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('admin_feedback', page=page_num, status=status_filter, type=type_filter) }}">{{ page_num }}</a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                {% endif %}
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if feedback_items.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('admin_feedback', page=feedback_items.next_num, status=status_filter, type=type_filter) }}">Next</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+        {% else %}
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No feedback found</h5>
+                    <p class="text-muted">No feedback matches your current filters</p>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function updateStatus(feedbackId, newStatus) {
+            fetch(`/admin/feedback/${feedbackId}/update`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `status=${newStatus}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Failed to update status');
+                }
+            });
+        }
+
+        function replyToFeedback(email, subject) {
+            const mailtoLink = `mailto:${email}?subject=Re: ${encodeURIComponent(subject)}`;
+            window.open(mailtoLink);
+        }
+
+        function viewFeedbackDetails(feedbackId) {
+            // Placeholder for viewing detailed feedback
+            alert(`View details for feedback #${feedbackId} - Feature coming soon!`);
+        }
+    </script>
+</body>
+</html>

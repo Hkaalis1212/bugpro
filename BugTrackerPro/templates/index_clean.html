@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if current_user.is_authenticated %}Dashboard{% else %}AI-Powered Bug Reporting{% endif %} - BugTracker Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        gray: {
+                            650: '#4a5568',
+                            750: '#2d3748',
+                            850: '#1a202c',
+                            950: '#171923'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-gray-800 border-b border-gray-700 px-6 py-4">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <i class="fas fa-bug text-blue-400 text-2xl"></i>
+                <h1 class="text-xl font-bold text-white">BugTracker Pro</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                {% if current_user.is_authenticated %}
+                    <span class="text-gray-300">Welcome, {{ current_user.username }}!</span>
+                    <a href="/dashboard" class="text-blue-400 hover:text-blue-300">Dashboard</a>
+                    <a href="/logout" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded text-white">Logout</a>
+                {% else %}
+                    <a href="/login" class="text-blue-400 hover:text-blue-300">Login</a>
+                    <a href="/register" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-white">Register</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-4xl mx-auto p-6">
+        <div class="bg-gray-800 rounded-lg shadow-lg p-8">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-white mb-4">
+                    <i class="fas fa-bug text-blue-400 mr-3"></i>
+                    Report a Bug
+                </h2>
+                <p class="text-gray-300 text-lg">
+                    Submit detailed bug reports with AI-powered analysis and reproduction steps
+                </p>
+            </div>
+
+            <!-- Bug Report Form -->
+            <form id="bugReportForm" method="POST" action="/submit" enctype="multipart/form-data" class="space-y-6">
+                <!-- Title -->
+                <div>
+                    <label for="title" class="block text-sm font-medium text-gray-200 mb-2">
+                        <i class="fas fa-heading text-blue-400 mr-2"></i>
+                        Bug Title *
+                    </label>
+                    <input type="text" 
+                           id="title" 
+                           name="title" 
+                           required 
+                           maxlength="200"
+                           class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                           placeholder="Brief, descriptive title for the bug">
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <label for="description" class="block text-sm font-medium text-gray-200 mb-2">
+                        <i class="fas fa-align-left text-blue-400 mr-2"></i>
+                        Bug Description *
+                    </label>
+                    <textarea id="description" 
+                              name="description" 
+                              required 
+                              rows="6"
+                              maxlength="2000"
+                              class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              placeholder="Detailed description of the bug, what you expected vs what happened, steps to reproduce..."></textarea>
+                </div>
+
+                <!-- Priority -->
+                <div>
+                    <label for="priority" class="block text-sm font-medium text-gray-200 mb-2">
+                        <i class="fas fa-exclamation-triangle text-yellow-400 mr-2"></i>
+                        Priority Level
+                    </label>
+                    <select id="priority" 
+                            name="priority" 
+                            class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="low">Low - Minor issue, workaround available</option>
+                        <option value="medium" selected>Medium - Affects functionality</option>
+                        <option value="high">High - Major feature broken</option>
+                        <option value="critical">Critical - System unusable</option>
+                    </select>
+                </div>
+
+                <!-- File Upload -->
+                <div>
+                    <label for="attachments" class="block text-sm font-medium text-gray-200 mb-2">
+                        <i class="fas fa-paperclip text-green-400 mr-2"></i>
+                        Attachments (Optional)
+                    </label>
+                    <div class="border-2 border-dashed border-gray-600 rounded-lg p-8 text-center bg-gray-700">
+                        <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                        <h4 class="text-lg font-semibold text-gray-300 mb-2">Upload Files</h4>
+                        <p class="text-gray-400 mb-4">Screenshots, logs, or other relevant files</p>
+                        <input type="file" 
+                               id="attachments" 
+                               name="attachments" 
+                               multiple 
+                               accept=".png,.jpg,.jpeg,.gif,.pdf,.txt,.log,.json,.xml"
+                               class="w-full text-gray-300">
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="flex justify-center">
+                    <button type="submit" 
+                            id="submit-btn"
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors flex items-center space-x-2">
+                        <i class="fas fa-paper-plane"></i>
+                        <span>Submit Bug Report</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Success Message Area -->
+        <div id="ai-results" class="hidden mt-8 bg-gray-800 rounded-lg shadow-lg p-8">
+            <h2 class="text-2xl font-bold text-white mb-6 text-center">
+                <i class="fas fa-check-circle text-green-400 mr-2"></i>
+                Bug Report Submitted Successfully
+            </h2>
+            <div id="results-content" class="space-y-6"></div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 border-t border-gray-700 mt-12 py-8">
+        <div class="max-w-7xl mx-auto px-6 text-center">
+            <p class="text-gray-400">
+                <i class="fas fa-robot text-blue-400 mr-2"></i>
+                Powered by AI for intelligent bug analysis and reproduction steps
+            </p>
+        </div>
+    </footer>
+</body>
+</html>

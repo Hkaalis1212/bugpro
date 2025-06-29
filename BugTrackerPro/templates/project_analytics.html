@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ project.name }} - Analytics</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-bug me-2"></i>Bug Reporter
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/projects">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Projects
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-5" style="margin-top: 6rem !important;">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h1 class="display-5">
+                    <i class="fas fa-chart-bar text-primary me-3"></i>
+                    {{ project.name }} Analytics
+                </h1>
+                <p class="lead text-muted">Performance insights and bug trends</p>
+            </div>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="row mb-5">
+            <div class="col-md-3 mb-3">
+                <div class="card bg-primary">
+                    <div class="card-body text-center">
+                        <i class="fas fa-bug fa-2x mb-2"></i>
+                        <h3 class="mb-0">{{ analytics.total_bugs }}</h3>
+                        <small>Total Bugs</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card bg-success">
+                    <div class="card-body text-center">
+                        <i class="fas fa-check-circle fa-2x mb-2"></i>
+                        <h3 class="mb-0">{{ analytics.resolved_bugs }}</h3>
+                        <small>Resolved</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card bg-warning">
+                    <div class="card-body text-center">
+                        <i class="fas fa-clock fa-2x mb-2"></i>
+                        <h3 class="mb-0">{{ "%.1f"|format(analytics.avg_resolution_hours) }}h</h3>
+                        <small>Avg Resolution Time</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card bg-info">
+                    <div class="card-body text-center">
+                        <i class="fas fa-users fa-2x mb-2"></i>
+                        <h3 class="mb-0">{{ analytics.active_team_members }}</h3>
+                        <small>Team Members</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row mb-5">
+            <!-- Bug Trends -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-line me-2"></i>
+                            Bug Trends (Last 30 Days)
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="bugTrendsChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Priority Distribution -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-pie me-2"></i>
+                            Priority Distribution
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="priorityChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Team Performance -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-trophy me-2"></i>
+                            Team Performance
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-dark table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Team Member</th>
+                                        <th>Assigned Bugs</th>
+                                        <th>Resolved</th>
+                                        <th>Avg Resolution Time</th>
+                                        <th>Success Rate</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for member in analytics.team_performance %}
+                                    <tr>
+                                        <td>
+                                            <i class="fas fa-user me-2"></i>
+                                            {{ member.name }}
+                                        </td>
+                                        <td>{{ member.assigned_count }}</td>
+                                        <td>
+                                            <span class="badge bg-success">{{ member.resolved_count }}</span>
+                                        </td>
+                                        <td>{{ "%.1f"|format(member.avg_resolution_hours) }}h</td>
+                                        <td>
+                                            <div class="progress" style="height: 20px;">
+                                                <div class="progress-bar" 
+                                                     role="progressbar" 
+                                                     style="width: {{ member.success_rate }}%"
+                                                     aria-valuenow="{{ member.success_rate }}" 
+                                                     aria-valuemin="0" 
+                                                     aria-valuemax="100">
+                                                    {{ "%.1f"|format(member.success_rate) }}%
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-history me-2"></i>
+                            Recent Activity
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% for activity in analytics.recent_activity %}
+                        <div class="d-flex align-items-center mb-3 pb-3 border-bottom">
+                            <div class="me-3">
+                                {% if activity.type == 'bug_created' %}
+                                    <i class="fas fa-plus-circle text-primary"></i>
+                                {% elif activity.type == 'bug_resolved' %}
+                                    <i class="fas fa-check-circle text-success"></i>
+                                {% elif activity.type == 'bug_assigned' %}
+                                    <i class="fas fa-user-tag text-warning"></i>
+                                {% endif %}
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold">{{ activity.title }}</div>
+                                <small class="text-muted">{{ activity.description }}</small>
+                            </div>
+                            <div class="text-muted">
+                                <small>{{ activity.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Chart data from server
+        const chartData = {{ analytics.chart_data | tojsonfilter | safe }};
+
+        // Bug Trends Chart
+        const bugTrendsCtx = document.getElementById('bugTrendsChart').getContext('2d');
+        new Chart(bugTrendsCtx, {
+            type: 'line',
+            data: {
+                labels: chartData.trends.labels,
+                datasets: [{
+                    label: 'New Bugs',
+                    data: chartData.trends.new_bugs,
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    tension: 0.1
+                }, {
+                    label: 'Resolved Bugs',
+                    data: chartData.trends.resolved_bugs,
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: 'white'
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: 'white' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    },
+                    y: {
+                        ticks: { color: 'white' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    }
+                }
+            }
+        });
+
+        // Priority Distribution Chart
+        const priorityCtx = document.getElementById('priorityChart').getContext('2d');
+        new Chart(priorityCtx, {
+            type: 'doughnut',
+            data: {
+                labels: chartData.priority.labels,
+                datasets: [{
+                    data: chartData.priority.values,
+                    backgroundColor: [
+                        '#dc3545', // Critical - Red
+                        '#fd7e14', // High - Orange
+                        '#ffc107', // Medium - Yellow
+                        '#28a745'  // Low - Green
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: 'white'
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

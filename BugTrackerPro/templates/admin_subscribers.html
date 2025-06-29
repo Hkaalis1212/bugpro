@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Subscribers - Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="fas fa-bug me-2"></i>Bug Reporter
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{{ url_for('admin_dashboard') }}">Dashboard</a>
+                <a class="nav-link" href="{{ url_for('admin_feedback') }}">Feedback</a>
+                <a class="nav-link active" href="{{ url_for('admin_subscribers') }}">Subscribers</a>
+                <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid py-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col">
+                <h2><i class="fas fa-users me-2"></i>Email Subscribers</h2>
+                <p class="text-muted">Manage email subscriptions and send updates</p>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <h5>{{ subscribers.total }}</h5>
+                        <small>Total Subscribers</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <h5>{{ subscribers.items | selectattr('is_active') | list | length }}</h5>
+                        <small>Active Subscribers</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body">
+                        <h5>{{ subscribers.items | selectattr('source', 'equalto', 'website') | list | length }}</h5>
+                        <small>Website Signups</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body">
+                        <h5>{{ subscribers.items | rejectattr('is_active') | list | length }}</h5>
+                        <small>Unsubscribed</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Subscribers Table -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Subscriber List</h5>
+                <div>
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#exportModal">
+                        <i class="fas fa-download me-2"></i>Export
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if subscribers.items %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Email</th>
+                                    <th>Source</th>
+                                    <th>Subscribed</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for subscriber in subscribers.items %}
+                                <tr>
+                                    <td>{{ subscriber.email }}</td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ subscriber.source }}</span>
+                                    </td>
+                                    <td>{{ subscriber.subscribed_at.strftime('%Y-%m-%d %H:%M') if subscriber.subscribed_at else 'N/A' }}</td>
+                                    <td>
+                                        {% if subscriber.is_active %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Unsubscribed</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-outline-primary btn-sm" onclick="sendUpdate('{{ subscriber.email }}')">
+                                            <i class="fas fa-envelope"></i>
+                                        </button>
+                                        {% if subscriber.is_active %}
+                                            <button class="btn btn-outline-warning btn-sm" onclick="toggleSubscription({{ subscriber.id }}, false)">
+                                                <i class="fas fa-pause"></i>
+                                            </button>
+                                        {% else %}
+                                            <button class="btn btn-outline-success btn-sm" onclick="toggleSubscription({{ subscriber.id }}, true)">
+                                                <i class="fas fa-play"></i>
+                                            </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if subscribers.pages > 1 %}
+                        <nav>
+                            <ul class="pagination justify-content-center">
+                                {% if subscribers.has_prev %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('admin_subscribers', page=subscribers.prev_num) }}">Previous</a>
+                                    </li>
+                                {% endif %}
+                                
+                                {% for page_num in subscribers.iter_pages() %}
+                                    {% if page_num %}
+                                        {% if page_num != subscribers.page %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ url_for('admin_subscribers', page=page_num) }}">{{ page_num }}</a>
+                                            </li>
+                                        {% else %}
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ page_num }}</span>
+                                            </li>
+                                        {% endif %}
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">...</span>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if subscribers.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('admin_subscribers', page=subscribers.next_num) }}">Next</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No subscribers found</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Modal -->
+    <div class="modal fade" id="exportModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Export Subscribers</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Choose export format:</p>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-primary" onclick="exportSubscribers('csv')">
+                            <i class="fas fa-file-csv me-2"></i>CSV Format
+                        </button>
+                        <button class="btn btn-outline-success" onclick="exportSubscribers('json')">
+                            <i class="fas fa-file-code me-2"></i>JSON Format
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function sendUpdate(email) {
+            // Placeholder for sending individual update
+            alert(`Send update to ${email} - Feature coming soon!`);
+        }
+
+        function toggleSubscription(subscriberId, activate) {
+            // Placeholder for toggling subscription status
+            alert(`${activate ? 'Activate' : 'Deactivate'} subscription - Feature coming soon!`);
+        }
+
+        function exportSubscribers(format) {
+            // Placeholder for export functionality
+            alert(`Export as ${format.toUpperCase()} - Feature coming soon!`);
+        }
+    </script>
+</body>
+</html>

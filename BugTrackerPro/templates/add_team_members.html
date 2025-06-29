@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Team Members - Bug Reporter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .fade-in {
+            animation: fadeIn 0.6s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .member-card {
+            transition: all 0.3s ease;
+        }
+        
+        .member-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-gray-800 border-b border-gray-700 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <a href="{{ url_for('index') }}" class="flex items-center space-x-3 text-white hover:text-blue-400 transition-colors">
+                    <i class="fas fa-bug text-2xl"></i>
+                    <span class="text-xl font-bold">Bug Reporter</span>
+                </a>
+                <div class="hidden md:flex items-center space-x-6">
+                    <a href="{{ url_for('index') }}" class="text-gray-300 hover:text-white px-3 py-2 rounded-md transition-colors">Bug Reporter</a>
+                    {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('projects') }}" class="text-gray-300 hover:text-white px-3 py-2 rounded-md transition-colors">Projects</a>
+                        <a href="{{ url_for('teams') }}" class="text-gray-300 hover:text-white px-3 py-2 rounded-md transition-colors">Teams</a>
+                        <a href="{{ url_for('add_team_members_page') }}" class="text-blue-400 hover:text-blue-300 px-3 py-2 rounded-md font-medium transition-colors">Add Members</a>
+                        <a href="{{ url_for('pricing') }}" class="text-gray-300 hover:text-white px-3 py-2 rounded-md transition-colors">Pricing</a>
+                        {% if current_user.is_admin %}
+                            <a href="{{ url_for('admin_dashboard') }}" class="text-gray-300 hover:text-white px-3 py-2 rounded-md transition-colors">Admin</a>
+                        {% endif %}
+                        <a href="{{ url_for('logout') }}" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md transition-colors">Logout</a>
+                    {% else %}
+                        <a href="{{ url_for('login') }}" class="text-gray-300 hover:text-white px-3 py-2 rounded-md transition-colors">Login</a>
+                        <a href="{{ url_for('register') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors">Register</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-white mb-4">
+                <i class="fas fa-user-plus text-blue-500 mr-4"></i>
+                Add Team Members
+            </h1>
+            <p class="text-xl text-gray-300 max-w-3xl mx-auto">
+                Invite new team members and manage team composition across your projects
+            </p>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="mb-8 space-y-4">
+                    {% for category, message in messages %}
+                        <div class="rounded-lg p-4 {{ 'bg-red-900 border border-red-700 text-red-100' if category == 'error' else 'bg-green-900 border border-green-700 text-green-100' }}">
+                            <div class="flex items-center">
+                                <i class="fas {{ 'fa-exclamation-triangle' if category == 'error' else 'fa-check-circle' }} mr-3"></i>
+                                {{ message }}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Add Member Form -->
+            <div class="lg:col-span-2">
+                <div class="bg-gray-800 rounded-xl shadow-2xl border border-gray-700 p-8 fade-in">
+                    <h2 class="text-2xl font-bold text-white mb-6 flex items-center">
+                        <i class="fas fa-user-plus text-green-500 mr-3"></i>
+                        New Team Member
+                    </h2>
+                    
+                    <!-- Mode Toggle -->
+                    <div class="mb-6">
+                        <div class="flex bg-gray-700 rounded-lg p-1">
+                            <button type="button" id="existing-user-tab" 
+                                    class="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all bg-blue-600 text-white">
+                                <i class="fas fa-user-check mr-2"></i>
+                                Add Existing User
+                            </button>
+                            <button type="button" id="new-user-tab" 
+                                    class="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all text-gray-300 hover:text-white">
+                                <i class="fas fa-user-plus mr-2"></i>
+                                Register New User
+                            </button>
+                        </div>
+                    </div>
+
+                    <form id="add-member-form" class="space-y-6">
+                        <!-- Team Selection -->
+                        <div>
+                            <label for="team_id" class="block text-lg font-semibold text-gray-200 mb-3">
+                                <i class="fas fa-users text-blue-400 mr-2"></i>
+                                Select Team
+                            </label>
+                            <select id="team_id" name="team_id" required 
+                                    class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                                <option value="">Choose a team...</option>
+                                {% for team in user_teams %}
+                                    <option value="{{ team.id }}">{{ team.name }} ({{ team.project.name }})</option>
+                                {% endfor %}
+                            </select>
+                            <p class="text-sm text-gray-400 mt-2">You can only add members to teams where you're an admin</p>
+                        </div>
+
+                        <!-- Existing User Mode -->
+                        <div id="existing-user-section">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label for="email" class="block text-lg font-semibold text-gray-200 mb-3">
+                                        <i class="fas fa-envelope text-blue-400 mr-2"></i>
+                                        Email Address
+                                    </label>
+                                    <input type="email" id="email" name="email" 
+                                           placeholder="colleague@company.com"
+                                           class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                                    <p class="text-sm text-gray-400 mt-2">User must already be registered in the system</p>
+                                </div>
+
+                                <div>
+                                    <label for="role" class="block text-lg font-semibold text-gray-200 mb-3">
+                                        <i class="fas fa-user-tag text-blue-400 mr-2"></i>
+                                        Role
+                                    </label>
+                                    <select id="role" name="role" 
+                                            class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                                        <option value="member">Member - Can view and report bugs</option>
+                                        <option value="admin">Admin - Can manage team and assign bugs</option>
+                                        <option value="viewer">Viewer - Read-only access</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- New User Registration Mode -->
+                        <div id="new-user-section" class="hidden">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label for="new_email" class="block text-lg font-semibold text-gray-200 mb-3">
+                                        <i class="fas fa-envelope text-blue-400 mr-2"></i>
+                                        Email Address
+                                    </label>
+                                    <input type="email" id="new_email" name="new_email" 
+                                           placeholder="newhire@company.com"
+                                           class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                                </div>
+
+                                <div>
+                                    <label for="new_role" class="block text-lg font-semibold text-gray-200 mb-3">
+                                        <i class="fas fa-user-tag text-blue-400 mr-2"></i>
+                                        Role
+                                    </label>
+                                    <select id="new_role" name="new_role" 
+                                            class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                                        <option value="member">Member - Can view and report bugs</option>
+                                        <option value="admin">Admin - Can manage team and assign bugs</option>
+                                        <option value="viewer">Viewer - Read-only access</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label for="first_name" class="block text-lg font-semibold text-gray-200 mb-3">
+                                        <i class="fas fa-user text-blue-400 mr-2"></i>
+                                        First Name
+                                    </label>
+                                    <input type="text" id="first_name" name="first_name" 
+                                           placeholder="John"
+                                           class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                                </div>
+
+                                <div>
+                                    <label for="last_name" class="block text-lg font-semibold text-gray-200 mb-3">
+                                        <i class="fas fa-user text-blue-400 mr-2"></i>
+                                        Last Name
+                                    </label>
+                                    <input type="text" id="last_name" name="last_name" 
+                                           placeholder="Doe"
+                                           class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="temp_password" class="block text-lg font-semibold text-gray-200 mb-3">
+                                    <i class="fas fa-lock text-blue-400 mr-2"></i>
+                                    Temporary Password
+                                </label>
+                                <input type="password" id="temp_password" name="temp_password" 
+                                       placeholder="TempPassword123!"
+                                       class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                                <p class="text-sm text-gray-400 mt-2">User should change this password on first login</p>
+                            </div>
+                        </div>
+
+                        <!-- GitHub Integration -->
+                        <div>
+                            <label for="github_username" class="block text-lg font-semibold text-gray-200 mb-3">
+                                <i class="fab fa-github text-purple-400 mr-2"></i>
+                                GitHub Username (Optional)
+                            </label>
+                            <input type="text" id="github_username" name="github_username" 
+                                   placeholder="github-username"
+                                   class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                            <p class="text-sm text-gray-400 mt-2">For automatic GitHub issue assignment</p>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="pt-4">
+                            <button type="submit" id="submit-btn"
+                                    class="w-full bg-gradient-to-r from-green-600 to-green-700 text-white text-lg font-semibold py-3 px-8 rounded-lg hover:from-green-700 hover:to-green-800 transform hover:scale-105 transition-all duration-300 shadow-lg">
+                                <span id="submit-text">
+                                    <i class="fas fa-user-plus mr-2"></i>
+                                    <span id="submit-action">Add Team Member</span>
+                                </span>
+                                <div id="submit-spinner" class="hidden">
+                                    <i class="fas fa-spinner fa-spin mr-2"></i>
+                                    <span id="submit-action-loading">Adding Member...</span>
+                                </div>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Team Overview -->
+            <div class="space-y-6">
+                <div class="bg-gray-800 rounded-xl shadow-2xl border border-gray-700 p-6 fade-in">
+                    <h3 class="text-xl font-bold text-white mb-4 flex items-center">
+                        <i class="fas fa-users text-blue-500 mr-3"></i>
+                        Your Teams
+                    </h3>
+                    
+                    {% if user_teams %}
+                        <div class="space-y-3">
+                            {% for team in user_teams %}
+                                <div class="member-card bg-gray-700 rounded-lg p-4 border border-gray-600">
+                                    <h4 class="font-semibold text-white">{{ team.name }}</h4>
+                                    <p class="text-sm text-gray-300">{{ team.project.name }}</p>
+                                    <div class="mt-2">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <span class="text-xs text-gray-400">
+                                                {{ team.members|length }} members
+                                            </span>
+                                            {% if team.user_role == 'admin' or team.created_by == current_user.id %}
+                                                <span class="text-xs bg-blue-600 text-white px-2 py-1 rounded">Admin</span>
+                                            {% else %}
+                                                <span class="text-xs bg-gray-600 text-white px-2 py-1 rounded">{{ team.user_role|title }}</span>
+                                            {% endif %}
+                                        </div>
+                                        {% if team.members %}
+                                            <div class="text-xs text-gray-400">
+                                                {% for member in team.members[:3] %}
+                                                    {{ member.user.first_name }} {{ member.user.last_name }}{% if not loop.last %}, {% endif %}
+                                                {% endfor %}
+                                                {% if team.members|length > 3 %}
+                                                    and {{ team.members|length - 3 }} more
+                                                {% endif %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center text-gray-400 py-8">
+                            <i class="fas fa-users text-4xl mb-4"></i>
+                            <p>You're not part of any teams yet</p>
+                            <a href="{{ url_for('teams') }}" class="text-blue-400 hover:text-blue-300 mt-2 inline-block">
+                                Create or join a team
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="bg-gray-800 rounded-xl shadow-2xl border border-gray-700 p-6">
+                    <h3 class="text-xl font-bold text-white mb-4 flex items-center">
+                        <i class="fas fa-chart-bar text-yellow-500 mr-3"></i>
+                        Quick Stats
+                    </h3>
+                    
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-300">Teams you manage:</span>
+                            <span class="text-white font-bold">{{ admin_teams_count }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-300">Total team members:</span>
+                            <span class="text-white font-bold">{{ total_members_count }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-300">Active projects:</span>
+                            <span class="text-white font-bold">{{ active_projects_count }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        {% if recent_members %}
+        <div class="mt-12">
+            <div class="bg-gray-800 rounded-xl shadow-2xl border border-gray-700 p-8">
+                <h3 class="text-2xl font-bold text-white mb-6 flex items-center">
+                    <i class="fas fa-clock text-green-500 mr-3"></i>
+                    Recently Added Members
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {% for member in recent_members %}
+                        <div class="member-card bg-gray-700 rounded-lg p-4 border border-gray-600">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-user text-white"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold text-white">{{ member.user.first_name }} {{ member.user.last_name }}</h4>
+                                    <p class="text-sm text-gray-300">{{ member.team.name }}</p>
+                                </div>
+                            </div>
+                            <div class="mt-3 flex items-center justify-between">
+                                <span class="text-xs bg-{{ 'blue' if member.role == 'admin' else 'gray' }}-600 text-white px-2 py-1 rounded">
+                                    {{ member.role|title }}
+                                </span>
+                                <span class="text-xs text-gray-400">
+                                    {{ member.joined_at.strftime('%b %d') }}
+                                </span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        // Mode switching
+        const existingUserTab = document.getElementById('existing-user-tab');
+        const newUserTab = document.getElementById('new-user-tab');
+        const existingUserSection = document.getElementById('existing-user-section');
+        const newUserSection = document.getElementById('new-user-section');
+        const submitAction = document.getElementById('submit-action');
+        const submitActionLoading = document.getElementById('submit-action-loading');
+        
+        let isNewUserMode = false;
+        
+        existingUserTab.addEventListener('click', function() {
+            isNewUserMode = false;
+            existingUserTab.classList.add('bg-blue-600', 'text-white');
+            existingUserTab.classList.remove('text-gray-300');
+            newUserTab.classList.remove('bg-blue-600', 'text-white');
+            newUserTab.classList.add('text-gray-300');
+            
+            existingUserSection.classList.remove('hidden');
+            newUserSection.classList.add('hidden');
+            
+            submitAction.textContent = 'Add Team Member';
+            submitActionLoading.textContent = 'Adding Member...';
+            
+            // Clear new user fields
+            document.getElementById('new_email').value = '';
+            document.getElementById('first_name').value = '';
+            document.getElementById('last_name').value = '';
+            document.getElementById('temp_password').value = '';
+        });
+        
+        newUserTab.addEventListener('click', function() {
+            isNewUserMode = true;
+            newUserTab.classList.add('bg-blue-600', 'text-white');
+            newUserTab.classList.remove('text-gray-300');
+            existingUserTab.classList.remove('bg-blue-600', 'text-white');
+            existingUserTab.classList.add('text-gray-300');
+            
+            newUserSection.classList.remove('hidden');
+            existingUserSection.classList.add('hidden');
+            
+            submitAction.textContent = 'Register & Add Member';
+            submitActionLoading.textContent = 'Registering User...';
+            
+            // Clear existing user fields
+            document.getElementById('email').value = '';
+        });
+
+        document.getElementById('add-member-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submit-btn');
+            const submitText = document.getElementById('submit-text');
+            const submitSpinner = document.getElementById('submit-spinner');
+            const teamId = document.getElementById('team_id').value;
+            
+            if (!teamId) {
+                alert('Please select a team first');
+                return;
+            }
+            
+            // Validate based on mode
+            if (isNewUserMode) {
+                const newEmail = document.getElementById('new_email').value.trim();
+                const firstName = document.getElementById('first_name').value.trim();
+                const lastName = document.getElementById('last_name').value.trim();
+                const tempPassword = document.getElementById('temp_password').value;
+                
+                if (!newEmail || !firstName || !lastName || !tempPassword) {
+                    alert('Please fill in all required fields for new user registration');
+                    return;
+                }
+                
+                if (tempPassword.length < 8) {
+                    alert('Password must be at least 8 characters long');
+                    return;
+                }
+            } else {
+                const email = document.getElementById('email').value.trim();
+                if (!email) {
+                    alert('Please enter an email address');
+                    return;
+                }
+            }
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            submitText.classList.add('hidden');
+            submitSpinner.classList.remove('hidden');
+            
+            try {
+                const formData = new FormData(this);
+                formData.append('is_new_user', isNewUserMode ? 'true' : 'false');
+                
+                const endpoint = isNewUserMode ? 
+                    `/teams/${teamId}/register-and-add-member` : 
+                    `/teams/${teamId}/add-member`;
+                
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Show success message
+                    showAlert('success', result.message || (isNewUserMode ? 'User registered and added to team!' : 'Member added successfully!'));
+                    this.reset();
+                    
+                    // Reset to existing user mode
+                    if (isNewUserMode) {
+                        existingUserTab.click();
+                    }
+                    
+                    // Refresh the page after a short delay to show updated stats
+                    setTimeout(() => location.reload(), 2000);
+                } else {
+                    showAlert('error', result.error || 'Failed to add member');
+                }
+            } catch (error) {
+                console.error('Error adding member:', error);
+                showAlert('error', 'Network error. Please try again.');
+            } finally {
+                // Reset button state
+                submitBtn.disabled = false;
+                submitText.classList.remove('hidden');
+                submitSpinner.classList.add('hidden');
+            }
+        });
+        
+        function showAlert(type, message) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 fade-in ${
+                type === 'success' ? 'bg-green-900 border border-green-700 text-green-100' : 'bg-red-900 border border-red-700 text-red-100'
+            }`;
+            alertDiv.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'} mr-3"></i>
+                    <span>${message}</span>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-4 hover:opacity-75">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(alertDiv);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (alertDiv.parentElement) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

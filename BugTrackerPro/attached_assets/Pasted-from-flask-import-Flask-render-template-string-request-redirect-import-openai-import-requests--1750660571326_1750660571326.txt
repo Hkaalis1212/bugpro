@@ -1,0 +1,75 @@
+from flask import Flask, render_template_string, request, redirect
+import openai
+import requests
+import os
+
+app = Flask(__name__)
+
+openai.api_key = os.getenv("OPENAI_API_KEY")
+github_token = os.getenv("GITHUB_TOKEN")
+
+@app.route("/")
+def home():
+    return render_template_string("""
+    <h2>🐛 Submit a Bug</h2>
+    <form method="POST" action="/submit">
+      Title: <input name="title"><br>
+      Description:<br><textarea name="description" rows="5" cols="40"></textarea><br>
+      GitHub Repo (optional): <input name="repo" placeholder="username/repo"><br>
+      <input type="submit">
+    </form>
+    """)
+
+@app.route("/submit", methods=["POST"])
+def submit():
+    title = request.form["title"]
+    description = request.form["description"]
+    repo = request.form.get("repo")
+
+    # 🔹 Generate ChatGPT explanation
+    try:
+        prompt = f"You are a senior software engineer. Analyze this bug report:\n\n{description}"
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        explanation = response.choices[0].message.content
+    except Exception as e:
+        explanation = f"⚠️ Failed to get AI explanation: {e}"
+
+    # 🔹 Create GitHub Issue if repo provided
+    gh_result = ""
+    if repo and github_token:
+        try:
+            gh_url = f"https://api.github.com/repos/{repo}/issues"
+            headers = {
+                "Authorization": f"token {github_token}",
+                "Accept": "application/vnd.github.v3+json"
+            }
+            issue_data = {
+                "title": title,
+                "body": f"{description}\n\n---\n🤖 AI Explanation:\n{explanation}"
+            }
+            r = requests.post(gh_url, headers=headers, json=issue_data)
+            if r.status_code == 201:
+                issue_url = r.json()["html_url"]
+                gh_result = f"✅ GitHub Issue Created: <a href='{issue_url}' target='_blank'>{issue_url}</a>"
+            else:
+                gh_result = f"❌ GitHub Issue Failed: {r.text}"
+        except Exception as e:
+            gh_result = f"⚠️ GitHub Error: {e}"
+
+    return f"""
+    <h3>✅ Bug Submitted</h3>
+    <h4>🧠 AI Explanation:</h4>
+    <pre>{explanation}</pre>
+    {gh_result}<br><br>
+    <a href="/">Submit another</a>
+    """
+
+@app.route("/ping")
+def ping():
+    return "✅ App is running!"
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)

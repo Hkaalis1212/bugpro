@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pricing - Bug Reporting System</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .pricing-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .pricing-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+        .popular-badge {
+            position: absolute;
+            top: -10px;
+            right: 20px;
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .feature-check {
+            color: #28a745;
+        }
+        .feature-x {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <!-- Header -->
+        <div class="row mb-5">
+            <div class="col-12 text-center">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <a href="/" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to App
+                    </a>
+                    <div class="text-center flex-grow-1">
+                        <h1 class="display-4">
+                            <i class="fas fa-credit-card text-primary me-3"></i>
+                            Choose Your Plan
+                        </h1>
+                        <p class="lead text-muted">Select the perfect plan for your bug reporting needs</p>
+                    </div>
+                    <div style="width: 120px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pricing Cards -->
+        <div class="row g-4">
+            <!-- Freemium Plan -->
+            <div class="col-lg-4">
+                <div class="card pricing-card h-100 border-secondary">
+                    <div class="card-body d-flex flex-column">
+                        <div class="text-center mb-4">
+                            <h3 class="card-title">Freemium</h3>
+                            <div class="display-4 fw-bold text-secondary">Free</div>
+                            <p class="text-muted">Perfect for getting started</p>
+                        </div>
+                        
+                        <ul class="list-unstyled flex-grow-1">
+                            <li class="mb-2">
+                                <i class="fas fa-check feature-check me-2"></i>
+                                5 bug reports per month
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check feature-check me-2"></i>
+                                1 file attachment per report
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check feature-check me-2"></i>
+                                5MB max file size
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-times feature-x me-2"></i>
+                                No AI analysis
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-times feature-x me-2"></i>
+                                Standard support
+                            </li>
+                        </ul>
+                        
+                        {% if current_user.is_authenticated and current_user.subscription_plan == 'freemium' %}
+                            <button class="btn btn-outline-secondary" disabled>Current Plan</button>
+                        {% else %}
+                            <a href="/register" class="btn btn-outline-primary">Get Started</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Standard Plan -->
+            <div class="col-lg-4">
+                <div class="card pricing-card h-100 border-primary position-relative">
+                    <div class="popular-badge">Most Popular</div>
+                    <div class="card-body d-flex flex-column">
+                        <div class="text-center mb-4">
+                            <h3 class="card-title text-primary">Standard</h3>
+                            <div class="display-4 fw-bold text-primary">$9.99</div>
+                            <p class="text-muted">per month</p>
+                        </div>
+                        
+                        <ul class="list-unstyled flex-grow-1">
+                            <li class="mb-2">
+                                <i class="fas fa-check feature-check me-2"></i>
+                                50 bug reports per month
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check feature-check me-2"></i>
+                                5 file attachments per report
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check feature-check me-2"></i>
+                                25MB max file size
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check feature-check me-2"></i>
+                                AI-powered reproduction steps
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check feature-check me-2"></i>
+                                Email support
+                            </li>
+                        </ul>
+                        
+                        {% if current_user.is_authenticated and current_user.subscription_plan == 'standard' %}
+                            <button class="btn btn-primary" disabled>Current Plan</button>
+                        {% else %}
+                            <div class="d-grid gap-2">
+                                <a href="/payment-flow?plan=standard" class="btn btn-primary">
+                                    {% if current_user.is_authenticated %}
+                                        Upgrade to Standard
+                                    {% else %}
+                                        Start Free Trial
+                                    {% endif %}
+                                </a>
+                                <form action="/subscription/create-checkout" method="POST" target="_blank" class="mt-2">
+                                    <input type="hidden" name="plan" value="standard">
+                                    <button type="submit" class="btn btn-outline-primary btn-sm w-100">
+                                        <i class="fas fa-external-link-alt me-1"></i>
+                                        Direct Checkout
+                                    </button>
+                                </form>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Premium Plan -->
+            <div class="col-lg-4">
+                <div class="card pricing-card h-100 border-warning">
+                    <div class="card-body d-flex flex-column">
+                        <div class="text-center mb-4">
+                            <h3 class="card-title text-warning">Premium</h3>
+                            <div class="display-4 fw-bold text-warning">$19.99</div>
+                            <p class="text-muted">per month</p>
+                        </div>
+                        
+                        <ul class="list-unstyled flex-grow-1">
+                            <li class="mb-2">
+                                <i class="fas fa-check feature-check me-2"></i>
+                                Unlimited bug reports
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check feature-check me-2"></i>
+                                10 file attachments per report
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check feature-check me-2"></i>
+                                100MB max file size
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check feature-check me-2"></i>
+                                Advanced AI analysis
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check feature-check me-2"></i>
+                                Priority support
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check feature-check me-2"></i>
+                                Custom integrations
+                            </li>
+                        </ul>
+                        
+                        {% if current_user.is_authenticated and current_user.subscription_plan == 'premium' %}
+                            <button class="btn btn-warning" disabled>Current Plan</button>
+                        {% else %}
+                            <div class="d-grid gap-2">
+                                <a href="/payment-flow?plan=premium" class="btn btn-warning">
+                                    {% if current_user.is_authenticated %}
+                                        Upgrade to Premium
+                                    {% else %}
+                                        Start Free Trial
+                                    {% endif %}
+                                </a>
+                                <form action="/subscription/create-checkout" method="POST" target="_blank" class="mt-2">
+                                    <input type="hidden" name="plan" value="premium">
+                                    <button type="submit" class="btn btn-outline-warning btn-sm w-100">
+                                        <i class="fas fa-external-link-alt me-1"></i>
+                                        Direct Checkout
+                                    </button>
+                                </form>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Subscription Info -->
+        {% if current_user.is_authenticated %}
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="card bg-dark border-info">
+                    <div class="card-body">
+                        <h5 class="card-title text-info">
+                            <i class="fas fa-user-circle me-2"></i>
+                            Your Current Subscription
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <strong>Plan:</strong> 
+                                <span class="badge bg-{% if current_user.subscription_plan == 'freemium' %}secondary{% elif current_user.subscription_plan == 'standard' %}primary{% else %}warning{% endif %}">
+                                    {{ current_user.subscription_plan.title() }}
+                                </span>
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Status:</strong> 
+                                <span class="badge bg-{% if current_user.subscription_status == 'active' %}success{% elif current_user.subscription_status == 'cancelled' %}warning{% else %}danger{% endif %}">
+                                    {{ current_user.subscription_status.title() }}
+                                </span>
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Reports This Month:</strong> {{ current_user.reports_this_month }}
+                                {% set limits = current_user.get_plan_limits() %}
+                                {% if limits['reports_per_month'] != -1 %}
+                                    / {{ limits['reports_per_month'] }}
+                                {% endif %}
+                            </div>
+                            <div class="col-md-3">
+                                {% if current_user.subscription_plan != 'freemium' %}
+                                    <a href="/subscription/manage" class="btn btn-outline-info btn-sm">
+                                        <i class="fas fa-cog me-1"></i>
+                                        Manage Subscription
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- FAQ Section -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <h3 class="text-center mb-4">Frequently Asked Questions</h3>
+                <div class="accordion" id="faqAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                Can I change my plan anytime?
+                            </button>
+                        </h2>
+                        <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Yes! You can upgrade or downgrade your plan at any time. Changes will be prorated and reflected in your next billing cycle.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                What happens if I exceed my plan limits?
+                            </button>
+                        </h2>
+                        <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                If you reach your monthly report limit, you'll be prompted to upgrade your plan. Your existing reports remain accessible, but you won't be able to submit new ones until the next billing cycle or upgrade.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                                Is my data secure?
+                            </button>
+                        </h2>
+                        <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Absolutely! We use industry-standard encryption for all data transmission and storage. Your bug reports and files are securely stored and only accessible to you and authorized team members.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Check if user cancelled checkout
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('cancelled') === 'true') {
+            // Show a nice message for cancelled checkout
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-info alert-dismissible fade show';
+            alertDiv.innerHTML = `
+                <i class="fas fa-info-circle me-2"></i>
+                Checkout was cancelled. You can try again anytime.
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.querySelector('.container').insertBefore(alertDiv, document.querySelector('.container').firstChild);
+        }
+    </script>
+</body>
+</html>
